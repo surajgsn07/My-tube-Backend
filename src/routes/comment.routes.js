@@ -4,8 +4,8 @@ import {getVideoComments , addComment , updateComment , deleteComment} from "../
 const router  = Router();
 
 router.route("/getVideoComments/:videoId").get(getVideoComments);
-router.route("/addComment/:videoId").get(verifyJwt , addComment);
-router.route("/updateComment/:commentId").get(verifyJwt , updateComment);
+router.route("/addComment/:videoId").post(verifyJwt , addComment);
+router.route("/updateComment/:commentId").post(verifyJwt , updateComment);
 router.route("/deleteComment/:commentId").get(verifyJwt , deleteComment);
 
 export default router;

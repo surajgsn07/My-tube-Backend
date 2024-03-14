@@ -30,7 +30,7 @@ const createTweet = asyncHandler(async (req, res) => {
     res.status(200)
     .json(
         new ApiResponse(
-            500,
+            200,
             tweet,
             "Tweet published successfully"
         )
@@ -57,41 +57,44 @@ const getUserTweets = asyncHandler(async (req, res) => {
     if(!user){
         throw new ApiError(400 , "User dont exist");
     }
-    
     const tweets = await Tweet.aggregate([
         {
-            $match:{
-                owner:user._id
-            }
+          $match: {
+            owner: user._id
+          }
         },
         {
-            $lookup:{
-                from:"users",
-                localField:"owner",
-                foreignField:"_id",
-                as:"owner",
-                pipeline:[
-                    {
-                        $match:{
-                            _id:"$owner._id"
-                        }
-                    },
-                    {
-                        $project:{
-                            username:1,
-                            fullName:1,
-                            avatar:1
-                        }
-                    }
-                ]
-            },
+          $lookup: {
+            from: "users",
+            localField: "owner",
+            foreignField: "_id",
+            as: "owner",
+            pipeline: [
+              {
+                $project: {
+                  username: 1,
+                  fullName: 1,
+                  avatar: 1
+                }
+              }
+            ]
+          }
         },
         {
-            $addFields:{
-                owner:{ $arrayElemAt: ["$owner", 0] }
-            }
+          $addFields: {
+            owner: { $arrayElemAt: ["$owner", 0] }
+          }
+        },
+        {
+          $project: {
+            content: 1,
+            _id: 1,
+            owner: 1
+          }
         }
-    ])
+      ]);
+      
+    console.log(tweets);
 
 
     if(!tweets){
@@ -113,6 +116,7 @@ const updateTweet = asyncHandler(async (req, res) => {
     //TODO: update tweet
     const {tweetId} = req.params;
     const {content} = req.body;
+    console.log(req.body);
     if(!tweetId){
         throw new ApiError(400 , "Tweet Id is required");
     }
@@ -178,9 +182,40 @@ const deleteTweet = asyncHandler(async (req, res) => {
     )
 })
 
+const getTweetById = asyncHandler(async(req,res) =>{
+    const {tweetId} = req.params;
+    if(!tweetId){
+        throw new ApiError(400 , "TweetId is required");
+    }
+
+    const validity = isValidObjectId(tweetId);
+    if(!validity){
+        throw new ApiError(400 , "Tweet id is not a valid object");
+    }
+
+    const tweet = await Tweet.findOne(
+        {
+            _id:tweetId
+        }
+    );
+
+    if(!tweet){
+        throw new ApiError(500 , "Something happened while getting tweet from the database");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            tweet,
+            "Tweet fetched successfully"
+        )
+    )
+})
+
 export {
     createTweet,
     getUserTweets,
     updateTweet,
-    deleteTweet
+    deleteTweet,
+    getTweetById
 }

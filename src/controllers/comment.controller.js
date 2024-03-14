@@ -1,4 +1,4 @@
-import mongoose from "mongoose"
+import mongoose, { isValidObjectId } from "mongoose"
 import {Comment} from "../models/comment.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
@@ -11,43 +11,31 @@ const getVideoComments = asyncHandler(async (req, res) => {
     if(!videoId){
         throw new ApiError(400 , "Video id is required");
     }
-    const {page = 1, limit = 2} = req.query
-    const comments = await Comment.aggregate(
-        [
-            {
-                $match:{
-                    video:new mongoose.Types.ObjectId(videoId)
-                }
-            }
-        ]
+    const {page = 1, limit = 10} = req.query
+    const response = await Comment.find(
+        {
+            video:videoId
+        }
     );
 
-    if(!comments){
-        throw new ApiError(500 , "Error while fetching comments");
-    }
+    console.log(videoId)
 
-    const options = {
-        page,
-        limit
-    };
-
-    const response = await Comment.aggregatePaginate(comments , options);
-    if(!response){
-        throw new ApiError(500 , "Error while paginating the comments");
-    }
+    console.log(response)
 
     return res.status(200)
     .json(
         new ApiResponse(
             200,
-            response.docs,
-            "Paginated comments fetched successfully"
+            response,
+            "Comments fetched successfully"
         )
     )
 
 })
 
 const addComment = asyncHandler(async (req, res) => {
+
+    console.log(req.body)
     // TODO: add a comment to a video
     const {content} = req.body;
     const {videoId} = req.params;
@@ -155,6 +143,8 @@ const deleteComment = asyncHandler(async (req, res) => {
         )
     )
 })
+
+
 
 export {
     getVideoComments, 

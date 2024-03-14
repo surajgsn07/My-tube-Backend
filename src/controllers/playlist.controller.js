@@ -42,6 +42,7 @@ const createPlaylist = asyncHandler(async (req, res) => {
 
 const getUserPlaylists = asyncHandler(async (req, res) => {
     const {userId} = req.params
+    console.log(userId)
     if(!userId){
         throw new ApiError(400 , "Userid is required");
     }
@@ -53,9 +54,12 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
 
     const playlists = await Playlist.find(
         {
-            owner:user._id
+            owner:userId
         }
-    )
+    ).populate({
+        path:"owner",
+        select:"avatar fullName "
+    })
 
     if(!playlists){
         throw new ApiError(500 , "Playlists not found");
@@ -78,7 +82,20 @@ const getPlaylistById = asyncHandler(async (req, res) => {
         throw new ApiError(400 , "PlayList id required");
     }
 
-    const playlist = await Playlist.findById(playlistId);
+    const playlist = await Playlist.findById(playlistId).populate(
+        {
+            path:"videos",
+            populate:{
+                path:"owner",
+                select:"avatar fullName username"
+            }
+        }
+    ).populate(
+        {
+            path:"owner",
+            select:"avatar fullName username"
+        }
+    );
     if(!playlist){
         throw new ApiError(400 , "Playlist dont exist");
     }
@@ -112,6 +129,10 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
 
     if(String(playlist.owner) !== String(req.user?._id)){
         throw new ApiError(400 , "Playlist doesnt belong to the user");
+    }
+
+    if(playlist.videos.includes(videoId)){
+        throw new ApiError(400 , "Video already exist in the playlist");
     }
 
     playlist.videos.push(video._id);

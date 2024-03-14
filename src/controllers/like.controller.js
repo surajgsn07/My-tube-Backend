@@ -191,9 +191,104 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     )
 })
 
+const getLikesOfVideoById = asyncHandler(async(req,res) => {
+    const {videoId } = req.params;
+    if(!videoId){
+        throw new ApiError(400 , "Video id is required");
+    }
+
+    const validity = isValidObjectId(videoId);
+    if(!validity){
+        throw new ApiError(400 , "Given video id is not valid");
+    }
+
+    const likes = await Like.find(
+        {
+            video:videoId
+        }
+    );
+
+    if(!likes){
+        throw new ApiError(500 , "Some error in getting likes from database");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            likes,
+            "Likes got successfully"
+        )
+    )
+})
+
+const getLikesOfCommentById = asyncHandler (async (req,res) =>{
+    const {commentId} = req.params;
+    if(!commentId){
+        throw new ApiError(400 , "Comment id is required");
+    }
+
+    const validity = isValidObjectId(commentId);
+    if(!validity){
+        throw new ApiError(400 , "Comment id is not valid");
+    }
+
+    const likes = await Like.find(
+        {
+            comment:commentId
+        }
+    );
+    if(!likes){
+        throw new ApiError(500 , "Error while getting comment like data from database");
+    }
+
+    return res.status(200)
+    .json(
+        new ApiResponse(
+            200 ,
+            likes,
+            "Comment likes fetched successfully"
+        )
+    )
+
+    
+})
+
+const getLikesOfTweetById = asyncHandler (async (req,res) =>{
+    const {tweetId} = req.params;
+    if(!tweetId){
+        throw new ApiError(400 , "tweet id is required");
+    }
+
+    const validity = isValidObjectId(tweetId);
+    if(!validity){
+        throw new ApiError(400 , "tweet id is not valid");
+    }
+
+    const likes = await Like.find(
+        {
+            tweet:tweetId
+        }
+    );
+    if(!likes){
+        throw new ApiError(500 , "Error while getting tweet like data from database");
+    }
+
+    return res.status(200)
+    .json(
+        new ApiResponse(
+            200 ,
+            likes,
+            "tweet likes fetched successfully"
+        )
+    )
+})
+
 export {
     toggleCommentLike,
     toggleTweetLike,
     toggleVideoLike,
-    getLikedVideos
+    getLikedVideos,
+    getLikesOfVideoById,
+    getLikesOfCommentById,
+    getLikesOfTweetById
 }

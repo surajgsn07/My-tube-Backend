@@ -6,6 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import multer from "multer";
+import { Video } from "../models/video.model.js";
 
 const generateAccessAndRefreshToken = async(userId)=>{
     try {
@@ -144,10 +145,7 @@ const loginUser = asyncHandler(async(req,res)=>{
 
     const option = {
         httpOnly : true,
-    secure: false, 
-    sameSite: 'Lax', 
-    domain: 'localhost', // Set to the appropriate domain
-    path: '/', // Set to the appropriate path // Set SameSite attribute
+        sameSite:'Lax'
     };
 
     return res
@@ -201,7 +199,11 @@ const logoutUser = asyncHandler(async(req,res)=>{
 
 
 const refreshAccessToken = asyncHandler(async(req,res)=>{
-    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken ;
+    // console.log(req.header('Authorization'))
+    console.log(req.body.headers.Authorization)
+    console.log(req.header)
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken || req.body.headers.Authorization.replace("Bearer " , "") || req.header("Authorization")?.replace("Bearer " , "")  ;
+
     if(!incomingRefreshToken){
         throw new ApiError(401 , "unauthorized request");
     }
@@ -371,6 +373,7 @@ const getUserChannelProfile = asyncHandler(async(req,res)=>{
         throw new ApiError(400 , "Username is required");
     }
 
+
     const channel = await User.aggregate([
         {
             $match:{username :username?.toLowerCase()}
@@ -410,6 +413,7 @@ const getUserChannelProfile = asyncHandler(async(req,res)=>{
         },
         {
             $project:{
+                _id:1,
                 fullName:1,
                 username:1,
                 subscribersCount:1,
@@ -425,10 +429,43 @@ const getUserChannelProfile = asyncHandler(async(req,res)=>{
         throw new ApiError(404 , "channel doesnot exist")
     }
 
+    // console.log(channel[0]._id)
+
+    const videos = await Video.find({
+        owner:channel[0]?._id
+    })
+
+
+    channel[0].videos = videos;
+    // console.log(channel)
+
     return res.status(200)
     .json(
         new ApiResponse(200  , channel[0] , "user channel fetched successfully")
     )
+})
+
+
+const getUserById = asyncHandler(async (req,res)=>{
+    const {userId} = req.params;
+    if(!userId){
+        throw new ApiError(400 , "UserId is required");
+    }
+
+    const owner = await User.findById(userId);
+    if(!owner){
+        throw new ApiError(400 , "User dont exist");
+    }
+
+    return res.status(200)
+    .json(
+        new ApiResponse(
+            200 ,
+            owner,
+            "User fetched successfully"
+        )
+    )
+
 })
 
 const getWatchHistory = asyncHandler(async(req,res)=>{
@@ -499,5 +536,6 @@ updateAccountDetails,
 updateUserAvatar,
 updateCoverImage,
 getUserChannelProfile,
-getWatchHistory
+getWatchHistory,
+getUserById
 }
