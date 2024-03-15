@@ -4,7 +4,7 @@ import cors from 'cors'
 const app = express()
 
 app.use(cors({
-    origin: 'https://watch-it-surajgsn.netilify.app',
+    origin: 'https://watch-it-surajgsn.netlify.app',
     credentials:true
 }))
 
