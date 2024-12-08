@@ -5,6 +5,7 @@ const app = express()
 
 app.use(cors({
     origin: 'https://watch-it-surajgsn.netlify.app',
+    // origin: 'http://localhost:5173',
     credentials:true
 }))
 

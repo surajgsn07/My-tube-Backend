@@ -1,6 +1,5 @@
 import {v2 as cloudinary} from 'cloudinary';
 import fs from 'fs'
-import { ApiError } from './ApiError.js';
 
 
 
@@ -36,7 +35,7 @@ const deleteFromCloudinary = async(publicId) => {
             
     } catch (error) {
         console.log(error)
-        throw new ApiError(500 , "something went wrong while deleting file from cloudinary ");
+        throw new Error(500 , "something went wrong while deleting file from cloudinary ");
     }
 }
 
@@ -55,7 +54,7 @@ const deleteVideoFromCloudinary = async(publicId) => {
             
     } catch (error) {
         console.log(error)
-        throw new ApiError(500 , "something went wrong while deleting file from cloudinary ");
+        throw new Error(500 , "something went wrong while deleting file from cloudinary ");
     }
 }
 
@@ -69,7 +68,7 @@ const publicId = async (url) => {
         const res = arr2[0];
         return res;
     } catch (error) {
-        throw new ApiError(500, "Something went wrong in getting public id");
+        throw new Error(500, "Something went wrong in getting public id");
     }
 }
 

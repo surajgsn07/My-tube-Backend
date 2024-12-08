@@ -8,65 +8,63 @@ import { deleteFromCloudinary, uploadToCloudinary ,publicId , deleteVideoFromClo
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 100, query, sortBy, sortType, userId } = req.query
-    //TODO: get all videos based on query, sort, pagination
+    const { page = 1, limit = 100, query="", sortBy = "_id", sortType = 'asc', userId } = req.query;
 
+    // Initialize the aggregation pipeline
     const pipeline = [];
 
-    // Add match stage if you have a query
+    // Add match stage if there is a query parameter for the title
     if (query) {
         pipeline.push({
             $match: {
-                title: { $regex: new RegExp(query, 'i') } 
+                title: { $regex: new RegExp(query, 'i') }
             }
         });
     }
 
-    console.log(userId)
-
-    if(userId){
+    // Add match stage for userId if provided and it's valid
+    if (userId) {
         const isValidObjectId = mongoose.isObjectIdOrHexString(userId);
-        if(isValidObjectId){
+        if (isValidObjectId) {
             pipeline.push({
-                $match:{
-                    owner:new mongoose.Types.ObjectId(userId)
+                $match: {
+                    owner: new mongoose.Types.ObjectId(userId)
                 }
-            })
+            });
+        } else {
+            return res.status(400).json(new ApiError(400, "Invalid userId format"));
         }
-        
     }
 
-    console.log(pipeline)
+    // Add sorting stage to the pipeline
+    const sortStage = {};
+    sortStage[sortBy] = sortType === 'desc' ? -1 : 1;
+    pipeline.push({ $sort: sortStage });
 
-
-    const obj = {
-        field:sortBy || "_id",
-        test:sortType === 'desc' ? -1 : 1
-    }
-    
+    // Add pagination logic
     const options = {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        sort : obj,
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10)
+    };
+
+    try {
+        const response = await Video.find();
+
+        // If no response is returned, throw an error
+        if (!response) {
+            throw new ApiError(500, "Error while generating response from the database");
+        }
+
+        return res.status(200).json(
+            new ApiResponse(200, response, "Getting all videos generated successfully")
+        );
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json(new ApiError(500, "Error while processing the request"));
     }
+});
 
-    const response  = await Video.aggregatePaginate(pipeline , options);
-    console.log(response)
 
-    if(!response){
-        throw new ApiError(500 , "Error while generating response from the database");
-    }
-
-    return res.status(200).json(
-        new ApiResponse(
-            200,
-            response,
-            "Getting all videos generated successfully"
-        )
-    )
-    // console.log(response)
-    
-})
 
 const publishAVideo = asyncHandler(async (req, res) => {
     // TODO: get video, upload to cloudinary, create video
